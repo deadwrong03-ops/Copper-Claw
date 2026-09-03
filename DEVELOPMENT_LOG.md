@@ -215,6 +215,122 @@ The current dark card background may receive additional cosmetic polish later.
 
 ---
 
+## 2026-09-03 — Duplicate-Name Trading Post Item Discovery
+
+Testing uncovered an important Trading Post search issue with items that share the same display name but use different item IDs and have separate Trading Post listings.
+
+Example tested:
+
+`Festive Confetti Infusion`
+
+Searching for this item returned several entries with the same visible name but different item IDs.
+
+Because each variant has its own Trading Post listing and price, choosing an entry by item ID alone made it difficult to know which stat variant was actually being watched.
+
+This could cause the Copper&Claw price to appear incorrect when compared against a different stat variant opened in the in-game Trading Post.
+
+The Trading Post price lookup itself was correct; the problem was item identification in the search/autocomplete interface.
+
+---
+
+## 2026-09-03 — Variant-Aware Trading Post Search
+
+Extended the Trading Post item index so searchable items can carry an optional stat/variant label in addition to:
+
+- item ID
+- item name
+
+The item index now reads stat attribute metadata from the Guild Wars 2 item API and uses it to distinguish duplicate-name Trading Post items.
+
+The local cache format was expanded to store:
+
+- item ID
+- item name
+- variant label
+
+Search text also includes the variant label, allowing searches to identify a specific version more easily.
+
+Example concept:
+
+`Festive Confetti Infusion - Power`
+
+instead of:
+
+`Festive Confetti Infusion (Item ID: 84882)`
+
+When a variant-aware search result is added to the watch list, the variant label is retained in the watched-item name.
+
+Legacy item-index cache rows remain readable, but an older cache without variant information triggers a background rebuild so the new metadata can be populated.
+
+**Result: PASS**
+
+---
+
+## 2026-09-03 — Player-Friendly Variant Labels
+
+The first variant-aware implementation exposed raw Guild Wars 2 API attribute names.
+
+Examples included:
+
+- `AgonyResistance / Power`
+- `AgonyResistance / BoonDuration`
+- `AgonyResistance / ConditionDuration`
+
+This worked technically but made autocomplete results longer and less readable than necessary.
+
+Added player-facing attribute formatting.
+
+Current mappings include:
+
+- `Power` → `Power`
+- `Precision` → `Precision`
+- `Toughness` → `Toughness`
+- `Vitality` → `Vitality`
+- `Ferocity` → `Ferocity`
+- `ConditionDamage` → `Condition Damage`
+- `Healing` → `Healing Power`
+- `BoonDuration` → `Concentration`
+- `ConditionDuration` → `Expertise`
+- `AgonyResistance` → omitted from the visible variant label
+
+The item-index cache was manually removed once during testing so the new labels could be rebuilt immediately.
+
+After the rebuild, Festive Confetti Infusion autocomplete results displayed cleanly as:
+
+- `Festive Confetti Infusion - Power`
+- `Festive Confetti Infusion - Vitality`
+- `Festive Confetti Infusion - Expertise`
+- `Festive Confetti Infusion - Precision`
+- `Festive Confetti Infusion - Toughness`
+- `Festive Confetti Infusion - Concentration`
+- `Festive Confetti Infusion - Healing Power`
+- `Festive Confetti Infusion - Condition Damage`
+
+The results are now short enough to scan easily while still identifying the exact Trading Post listing being watched.
+
+**Result: PASS**
+
+---
+
+## 2026-09-03 — Git Repository / Documentation Setup
+
+Initialized a Git repository for Copper&Claw and pushed the standalone project to GitHub.
+
+The repository root contains the Visual Studio solution, project folder, README, and development log.
+
+Added:
+
+- `README.md`
+- `DEVELOPMENT_LOG.md`
+
+The documentation files were initially referenced by Visual Studio from outside the repository and therefore did not appear on GitHub.
+
+They were moved into the repository root, re-added to the Visual Studio project, committed, and pushed successfully.
+
+**Result: PASS**
+
+---
+
 ## 2026-09-03 — Current Functional Validation
 
 The following systems are currently working in-game:
@@ -226,6 +342,10 @@ The following systems are currently working in-game:
 - Refresh All
 - persistent watched items
 - cached searchable Trading Post item index
+- variant-aware duplicate-name item search
+- player-friendly stat/variant labels
+- searchable stat variants
+- variant labels retained when adding watched items
 - local Trading Post history
 - history continuity across game restarts
 - current lowest sell price
@@ -245,7 +365,9 @@ The following systems are currently working in-game:
 - sell/buy history sparklines
 - historical min/avg/max values
 
-**Current overall status: Core standalone functionality is working.**
+**Current overall status: Core standalone functionality is working and Copper&Claw remains in pre-release development.**
+
+No public Copper&Claw release has been published yet.
 
 ---
 
@@ -274,7 +396,15 @@ Possible future cleanup: rename the build target to `CopperAndClaw.dll` while re
 
 ### Target alert appearance
 
-The redesigned target alert is functionally good and clearer to read. The current dark card background may receive additional cosmetic polish later.
+The redesigned target alert is functionally good and clearer to read.
+
+The current dark card background may receive additional cosmetic polish later.
+
+### Item-index cache format
+
+The Trading Post item-index cache now includes variant labels.
+
+Older cache files without variant metadata remain readable, but they trigger a rebuild so the cache can be upgraded to the current format.
 
 ### Nexus signature
 
@@ -291,6 +421,7 @@ The current addon signature is provisional and must be replaced/registered befor
 - verify final DLL loads through Nexus
 - verify watch persistence
 - verify cached item index
+- verify variant-aware duplicate-name search after restart
 - verify history continuity
 - verify target alert
 - verify queued alerts
@@ -306,4 +437,6 @@ The current addon signature is provisional and must be replaced/registered befor
 
 When making future Copper&Claw changes, use the current project files as the source of truth.
 
-Do not substitute older copies of files from prior work. When a current source file is needed for modification, request the current file first.
+Do not substitute older copies of files from prior work.
+
+When a current source file is needed for modification, request the current file first, even if that same file was edited or supplied earlier in the current development session.

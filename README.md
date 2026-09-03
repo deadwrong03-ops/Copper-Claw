@@ -27,6 +27,9 @@ Core Trading Post functionality has been separated into its own addon and tested
 - Persistent local Trading Post price history
 - Cached searchable Trading Post item index
 - Item search without requiring manual item IDs
+- Variant-aware search for duplicate-name Trading Post items
+- Player-friendly stat labels for item variants
+- Searchable stat variants such as Power, Precision, Concentration, and Expertise
 - Configurable trend window
 - Collapsible Details / History section
 - Sell and buy trend calculations
@@ -66,6 +69,47 @@ The index is cached locally, remains searchable between sessions, can rebuild wh
 Current cache file:
 
 `CopperAndClaw_TradingPostItemIndex.tsv`
+
+### Duplicate-Name / Stat Variants
+
+Some Guild Wars 2 Trading Post items share the same visible item name while using different item IDs and separate Trading Post listings.
+
+Copper&Claw detects available stat/attribute metadata for these items and uses it to distinguish variants directly in search results.
+
+For example, instead of several identical entries such as:
+
+`Festive Confetti Infusion (Item ID: ...)`
+
+search results can display:
+
+- `Festive Confetti Infusion - Power`
+- `Festive Confetti Infusion - Precision`
+- `Festive Confetti Infusion - Toughness`
+- `Festive Confetti Infusion - Vitality`
+- `Festive Confetti Infusion - Healing Power`
+- `Festive Confetti Infusion - Concentration`
+- `Festive Confetti Infusion - Expertise`
+- `Festive Confetti Infusion - Condition Damage`
+
+This makes it easier to select the exact Trading Post listing being watched without relying on item IDs alone.
+
+Player-facing labels are used where the API exposes internal attribute names.
+
+Current mappings include:
+
+- `ConditionDamage` ? `Condition Damage`
+- `Healing` ? `Healing Power`
+- `BoonDuration` ? `Concentration`
+- `ConditionDuration` ? `Expertise`
+- `AgonyResistance` ? omitted from the visible label when it would only add clutter
+
+Variant labels are also included in search matching, allowing searches such as:
+
+`festive confetti concentration`
+
+to narrow toward the appropriate stat version.
+
+Older item-index cache files without variant metadata can still be read, but Copper&Claw will rebuild the index so the newer variant information can be added.
 
 ## Target Alerts
 
@@ -117,6 +161,11 @@ The following have been tested successfully in-game:
 - compact watched-item UI
 - collapsed Details / History layout
 - item search/index operation
+- duplicate-name Trading Post item detection
+- stat-variant identification
+- player-friendly variant labels
+- searchable stat variants
+- rebuilt variant-aware item-index cache
 
 ## Known Pre-Release Notes
 
@@ -125,6 +174,7 @@ The following have been tested successfully in-game:
 - The Nexus addon display name is `Copper&Claw`.
 - The current addon signature is provisional and must be replaced/registered before public release.
 - Target-alert background styling may receive additional cosmetic polish later.
+- No public Copper&Claw release has been published yet.
 
 ## Build Environment
 

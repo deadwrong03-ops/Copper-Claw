@@ -3148,8 +3148,18 @@ void TradingPostUI::RenderTab(
                     searchResults
                     )
                 {
+                    std::string displayName =
+                        result.name;
+
+                    if (!result.variantLabel.empty())
+                    {
+                        displayName +=
+                            " - " +
+                            result.variantLabel;
+                    }
+
                     const std::string label =
-                        result.name +
+                        displayName +
                         "  (Item ID: " +
                         std::to_string(
                             result.itemID
@@ -3194,18 +3204,28 @@ void TradingPostUI::RenderTab(
 
     if (selectedSearchItem)
     {
+        std::string selectedDisplayName =
+            selectedItem.name;
+
+        if (!selectedItem.variantLabel.empty())
+        {
+            selectedDisplayName +=
+                " - " +
+                selectedItem.variantLabel;
+        }
+
         const bool added =
             TradingPostWatchManager::
             AddItem(
                 selectedItem.itemID,
-                selectedItem.name
+                selectedDisplayName
             );
 
         if (added)
         {
             searchStatus =
                 "Added: " +
-                selectedItem.name +
+                selectedDisplayName +
                 " (Item ID " +
                 std::to_string(
                     selectedItem.itemID
@@ -3225,7 +3245,7 @@ void TradingPostUI::RenderTab(
         else
         {
             searchStatus =
-                selectedItem.name +
+                selectedDisplayName +
                 " is already on the watch list.";
 
             searchStatusError =
