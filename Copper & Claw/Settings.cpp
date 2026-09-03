@@ -1,0 +1,143 @@
+#include "Settings.h"
+
+#include <Windows.h>
+
+#include <algorithm>
+#include <filesystem>
+#include <fstream>
+#include <string>
+
+CopperAndClawSettings g_Settings{};
+
+namespace
+{
+    std::filesystem::path GetSettingsPath(
+        void* moduleHandle
+    )
+    {
+        wchar_t modulePath[MAX_PATH] = {};
+
+        const DWORD length =
+            GetModuleFileNameW(
+                static_cast<HMODULE>(moduleHandle),
+                modulePath,
+                MAX_PATH
+            );
+
+        if (length == 0)
+        {
+            return {};
+        }
+
+        std::filesystem::path path(modulePath);
+
+        return
+            path.parent_path() /
+            L"CopperAndClaw.ini";
+    }
+}
+
+bool Settings::Load(
+    void* moduleHandle
+)
+{
+    const std::filesystem::path path =
+        GetSettingsPath(moduleHandle);
+
+    if (path.empty())
+    {
+        return false;
+    }
+
+    std::ifstream file(path);
+
+    if (!file.is_open())
+    {
+        return false;
+    }
+
+    std::string line;
+
+    while (std::getline(file, line))
+    {
+        const size_t separator =
+            line.find('=');
+
+        if (
+            separator ==
+            std::string::npos
+            )
+        {
+            continue;
+        }
+
+        const std::string key =
+            line.substr(
+                0,
+                separator
+            );
+
+        const std::string value =
+            line.substr(
+                separator + 1
+            );
+
+        try
+        {
+            if (
+                key ==
+                "tradingPostTrendWindowIndex"
+                )
+            {
+                g_Settings
+                    .tradingPostTrendWindowIndex =
+                    std::stoi(value);
+            }
+        }
+        catch (...)
+        {
+            // Ignore malformed values and
+            // keep the current/default setting.
+        }
+    }
+
+    g_Settings.tradingPostTrendWindowIndex =
+        std::clamp(
+            g_Settings.tradingPostTrendWindowIndex,
+            0,
+            8
+        );
+
+    return true;
+}
+
+bool Settings::Save(
+    void* moduleHandle
+)
+{
+    const std::filesystem::path path =
+        GetSettingsPath(moduleHandle);
+
+    if (path.empty())
+    {
+        return false;
+    }
+
+    std::ofstream file(
+        path,
+        std::ios::trunc
+    );
+
+    if (!file.is_open())
+    {
+        return false;
+    }
+
+    file
+        << "tradingPostTrendWindowIndex="
+        << g_Settings
+        .tradingPostTrendWindowIndex
+        << '\n';
+
+    return true;
+}
