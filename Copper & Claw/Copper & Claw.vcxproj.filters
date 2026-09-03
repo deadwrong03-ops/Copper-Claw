@@ -94,7 +94,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\..\..\Downloads\README.md" />
-    <None Include="..\..\..\..\..\Downloads\DEVELOPMENT_LOG.md" />
+    <None Include="..\DEVELOPMENT_LOG.md" />
+    <None Include="..\README.md" />
   </ItemGroup>
 </Project>

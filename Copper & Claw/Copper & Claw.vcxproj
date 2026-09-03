@@ -161,8 +161,8 @@
     <ClInclude Include="TradingPostWatchManager.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\..\..\Downloads\DEVELOPMENT_LOG.md" />
-    <None Include="..\..\..\..\..\Downloads\README.md" />
+    <None Include="..\DEVELOPMENT_LOG.md" />
+    <None Include="..\README.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
