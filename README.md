@@ -5,9 +5,9 @@ Copper&Claw is a standalone Guild Wars 2 Nexus addon for watching Trading Post p
 ## Current Status
 
 **Version:** 0.1.0  
-**Status:** Functional standalone build / pre-release testing
+**Status:** Release candidate / final pre-release validation passed
 
-Core Trading Post functionality has been separated into its own addon and tested successfully in-game.
+Core Trading Post functionality has been separated into its own addon, tested successfully in-game, and has completed the current release-candidate validation pass.
 
 ## Features
 
@@ -315,6 +315,8 @@ The following have been tested successfully in-game:
 - rebuilt variant-aware item-index cache
 - Sell and Buy history sparklines
 - historical min / avg / max display
+- clean Release x64 rebuild and fresh DLL load
+- final release-candidate smoke test
 
 ## Known Pre-Release Notes
 
@@ -326,7 +328,7 @@ The following have been tested successfully in-game:
 - All historical analysis is based only on locally collected observations.
 - New installations begin with no historical market data.
 - Target-alert background styling may receive additional cosmetic polish later.
-- No public Copper&Claw release has been published yet.
+- The current build is a release candidate; public release/tag packaging is the remaining release step.
 
 ## Build Environment
 
@@ -366,9 +368,9 @@ user agent.
 
 ## Project Direction
 
-Copper&Claw was created by extracting the working Trading Post watcher framework from FoodReminder-Nexus into a dedicated standalone addon.
+Copper&Claw was created by extracting the working Trading Post watcher framework originally developed inside FoodReminder-Nexus into a dedicated standalone addon.
 
-FoodReminder-Nexus remains intact and continues to retain its own Trading Post functionality.
+Copper&Claw is now maintained independently as the dedicated Trading Post project.
 
 Copper&Claw is intended to provide a stock-market-style view of Guild Wars 2 Trading Post information while keeping the interface understandable and avoiding unnecessary market jargon or clutter.
 

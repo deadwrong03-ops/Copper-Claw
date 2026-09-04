@@ -4,7 +4,7 @@
 
 Copper&Claw is a standalone Guild Wars 2 Nexus Trading Post watcher.
 
-The project began by copying the already-working Trading Post framework from FoodReminder-Nexus into a new standalone addon. The original FoodReminder-Nexus Trading Post implementation remains intact; Copper&Claw is a separate project.
+The project began by extracting the already-working Trading Post framework that had been developed inside FoodReminder-Nexus into a new standalone addon. Copper&Claw is now maintained as its own separate project.
 
 Display name: `Copper&Claw`  
 Filesystem/data prefix: `CopperAndClaw`  
@@ -602,6 +602,49 @@ After restart, verified:
 
 ---
 
+## 2026-09-04 — Final Pre-Release Validation
+
+Completed the final Copper&Claw pre-release verification pass using the current standalone build.
+
+Verified:
+
+- clean Release x64 rebuild
+- fresh DLL load through Nexus
+- standalone addon startup
+- `Copper&Claw` display name and in-app heading
+- multiple watched items
+- automatic 60-second refresh
+- manual item refresh
+- Refresh All
+- watched-item persistence
+- Sell Target persistence
+- Trend Window persistence
+- cached Trading Post item index
+- variant-aware duplicate-name item search
+- player-friendly stat/variant labels
+- local Trading Post history continuity
+- separate Sell Listings / Buy Orders analysis
+- direction percentages
+- recent-average comparisons
+- price-position analysis
+- buyer-facing and seller-facing signals
+- confidence / coverage / sample reporting
+- sell/buy history sparklines
+- historical min / avg / max values
+- target alert triggering
+- queued target alerts
+- Dismiss Party behavior
+- local-history disclaimer
+- compact watch-list layout
+
+No blocking in-game regression was observed during the current release-candidate testing.
+
+**Result: PASS**
+
+Copper&Claw is now at release-candidate status pending the final documentation commit/push and release/tag packaging.
+
+---
+
 ## 2026-09-04 — Current Functional Validation
 
 The following systems are currently working in-game:
@@ -649,7 +692,7 @@ The following systems are currently working in-game:
 - sell/buy history sparklines
 - historical min/avg/max values
 
-**Current overall status: Core standalone functionality is working and Copper&Claw remains in pre-release development.**
+**Current overall status: Core standalone functionality is working and the current build is a release candidate.**
 
 No public Copper&Claw release has been published yet.
 
@@ -718,27 +761,27 @@ Replace only if Copper&Claw later receives an assigned Raidcore signature.
 
 ## Pre-Release Checklist
 
-- decide whether Aurene's Bite remains permanently watched
-- perform clean Release x64 rebuild
-- verify final DLL loads through Nexus
-- verify watch persistence
-- verify Sell Target persistence
-- verify Trend Window persistence
-- verify cached item index
-- verify variant-aware duplicate-name search after restart
-- verify history continuity
-- verify observation counts survive restart
-- verify Sell Listings analysis
-- verify Buy Orders analysis
-- verify confidence / coverage display
-- verify local-history disclaimer
-- verify target alert
-- verify queued alerts
-- update `README.md`
-- update `DEVELOPMENT_LOG.md`
-- commit
-- push
-- create release/tag when ready
+- [ ] decide whether Aurene's Bite remains permanently watched
+- [x] perform clean Release x64 rebuild
+- [x] verify final DLL loads through Nexus
+- [x] verify watch persistence
+- [x] verify Sell Target persistence
+- [x] verify Trend Window persistence
+- [x] verify cached item index
+- [x] verify variant-aware duplicate-name search after restart
+- [x] verify history continuity
+- [x] verify observation counts survive restart
+- [x] verify Sell Listings analysis
+- [x] verify Buy Orders analysis
+- [x] verify confidence / coverage display
+- [x] verify local-history disclaimer
+- [x] verify target alert
+- [x] verify queued alerts
+- [x] update `README.md`
+- [x] update `DEVELOPMENT_LOG.md`
+- [ ] commit
+- [ ] push
+- [ ] create release/tag when ready
 
 ---
 
