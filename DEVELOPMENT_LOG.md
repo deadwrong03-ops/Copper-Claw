@@ -86,7 +86,13 @@ Startup initializes Settings, Price Manager, History Manager, Item Index Manager
 
 Nexus render and options-render callbacks are registered. Shutdown saves settings and shuts down the Trading Post systems.
 
-**Pre-release note:** the current Nexus addon signature is provisional and must be replaced/registered before public release.
+Current standalone signature:
+
+`(uint32_t)-26090301`
+
+Decision: keep the current unique negative signature for standalone/non-Raidcore use.
+
+If Copper&Claw is later hosted through Raidcore, replace it with the signature assigned by Raidcore.
 
 ---
 
@@ -133,9 +139,9 @@ Changes:
 - Refresh / Remove actions kept visible
 - Details / History collapsed by default
 - trend data moved inside Details / History
-- Deal information moved inside Details / History
+- market information moved inside Details / History
 - Spread information moved inside Details / History
-- Signal information moved inside Details / History
+- signals moved inside Details / History
 - charts and historical statistics moved inside Details / History
 
 The same compact layout was also ported back into FoodReminder-Nexus.
@@ -331,16 +337,285 @@ They were moved into the repository root, re-added to the Visual Studio project,
 
 ---
 
-## 2026-09-03 — Current Functional Validation
+## 2026-09-04 — Market Analysis Accuracy Review
+
+Reviewed the original Deal / Signal logic after live in-game examples showed misleading combinations.
+
+A key issue was identified:
+
+A rising sell trend could cause the old system to label an item overpriced or cautionary even when the current price was still below its recent average.
+
+Decision:
+
+Price position should carry more weight than trend direction.
+
+A rising price alone should not automatically mean an item is overpriced.
+
+Example logic direction:
+
+- below average + falling/stable → favorable
+- below average + rising → worth watching
+- near average + rising → watch
+- above average + rising → caution
+- well above average + rising → stronger caution
+
+This became the basis for the next market-analysis redesign.
+
+---
+
+## 2026-09-04 — Separate Sell Listings / Buy Orders Analysis
+
+The old combined market terminology could look contradictory because Sell Listings and Buy Orders mean different things.
+
+Example:
+
+- Sell listing rising = buyers must pay more
+- Buy order rising = sellers can receive more
+
+Decision: analyze both sides separately.
+
+New sections:
+
+### SELL LISTINGS
+
+Displays:
+
+- Direction
+- Recent Avg
+- Price Position
+- For Buyers
+
+Possible direction wording includes:
+
+- Getting More Expensive
+- Getting Cheaper
+- Stable
+- Developing
+
+Buyer-facing signals include:
+
+- Favorable
+- Worth Watching
+- Typical
+- Caution
+- Developing
+
+### BUY ORDERS
+
+Displays:
+
+- Direction
+- Recent Avg
+- Price Position
+- For Sellers
+
+Possible direction wording includes:
+
+- Buyers Offering More
+- Buyers Offering Less
+- Stable
+- Developing
+
+Seller-facing signals include:
+
+- Favorable
+- Worth Watching
+- Typical
+- Weak
+- Developing
+
+Shared information includes:
+
+- Confidence
+- Coverage
+- Samples
+- Spread
+
+This removed the confusing appearance of Sell and Buy information contradicting each other.
+
+**Result: PASS**
+
+---
+
+## 2026-09-04 — Direction Percentages Added
+
+Added percentage change next to Sell Listing and Buy Order direction labels.
+
+Examples:
+
+`Getting More Expensive (+1.19%)`
+
+`Buyers Offering More (+0.38%)`
+
+The compact watched-item summary now also includes the direction percentages.
+
+Example:
+
+`Listings: More Expensive +1.19% | Buy Orders: Higher +0.38% | Conf HIGH`
+
+Recent-average comparison percentages remain visible separately.
+
+Decision: do not add additional percentages to signals or confidence so the interface remains readable.
+
+**Result: PASS**
+
+---
+
+## 2026-09-04 — Confidence / Coverage Presentation
+
+Market analysis now presents maturity information so newly tracked items are not treated as if they have complete long-term history.
+
+Current analysis considers:
+
+- number of observations
+- available history span
+- selected trend window
+- whether the selected window comparison is available
+- selected-window coverage
+
+Current minimum analysis sample floor:
+
+`15`
+
+Current readiness threshold:
+
+`75%` selected-window coverage
+
+Current high-confidence threshold:
+
+`90%` selected-window coverage
+
+Confidence labels:
+
+- LOW
+- MEDIUM
+- HIGH
+
+The UI also shows:
+
+- Coverage
+- Samples
+
+This is intended to make the limitations of locally collected data visible instead of presenting early analysis with false certainty.
+
+**Result: PASS**
+
+---
+
+## 2026-09-04 — Historical Data Disclaimer Added
+
+Copper&Claw does not have external historical Trading Post data from before an item begins being tracked.
+
+Added a global UI notice near the Trend Window:
+
+`Historical note: Copper&Claw builds its own price history from the time you begin tracking an item.`
+
+`No earlier market history is available on initial install.`
+
+Developing analysis can also display:
+
+`Analysis is based only on locally collected history.`
+
+This clarifies that longer trend windows become meaningful only after enough local observations have been collected.
+
+**Result: PASS**
+
+---
+
+## 2026-09-04 — In-App Heading Cleanup
+
+The main Trading Post panel still displayed the inherited heading:
+
+`Trading Post Watcher`
+
+This was a leftover from the original FoodReminder-Nexus Trading Post framework.
+
+Changed the visible heading to:
+
+`Copper&Claw`
+
+No functional logic was changed.
+
+**Result: PASS**
+
+---
+
+## 2026-09-04 — DLL Naming Decision
+
+Reviewed whether the Visual Studio build target should be renamed from:
+
+`Copper & Claw.dll`
+
+to:
+
+`CopperAndClaw.dll`
+
+Decision: keep the current DLL filename.
+
+Current naming:
+
+- Visual Studio project: `Copper & Claw`
+- DLL: `Copper & Claw.dll`
+- user-facing addon name: `Copper&Claw`
+- persistence/data prefix: `CopperAndClaw`
+
+No build-target rename is currently planned.
+
+---
+
+## 2026-09-04 — Nexus Signature Decision
+
+Reviewed the current development signature:
+
+`(uint32_t)-26090301`
+
+Decision: retain the current unique negative signature for standalone/non-Raidcore use.
+
+If Copper&Claw is later hosted through Raidcore, replace it with the positive signature assigned by Raidcore.
+
+The earlier documentation note saying the signature must always be replaced before public release is no longer considered accurate for a standalone release.
+
+---
+
+## 2026-09-04 — Full Restart / Persistence Validation
+
+Performed another full Guild Wars 2 restart using the current Copper&Claw build after the market-analysis changes.
+
+Before restart, verified:
+
+- multiple watched items
+- Sell Targets configured
+- Trend Window set to `6h`
+- existing observation counts/history
+
+After restart, verified:
+
+- watched items remained
+- Sell Targets remained
+- Trend Window remained `6h`
+- historical observations remained
+- observation counts continued increasing
+- local history remained intact
+- current market analysis rendered normally
+
+**Result: PASS**
+
+---
+
+## 2026-09-04 — Current Functional Validation
 
 The following systems are currently working in-game:
 
 - standalone Nexus loading
+- `Copper&Claw` addon display name
+- `Copper&Claw` in-app heading
 - multi-item watch list
 - 60-second automatic refresh
 - manual item refresh
 - Refresh All
 - persistent watched items
+- persistent Sell Targets
+- persisted Trend Window
 - cached searchable Trading Post item index
 - variant-aware duplicate-name item search
 - player-friendly stat/variant labels
@@ -348,6 +623,7 @@ The following systems are currently working in-game:
 - variant labels retained when adding watched items
 - local Trading Post history
 - history continuity across game restarts
+- observation counts retained across game restarts
 - current lowest sell price
 - current highest buy price
 - Sell Target editing
@@ -358,10 +634,18 @@ The following systems are currently working in-game:
 - compact watch-list UI
 - collapsible Details / History
 - configurable trend windows
-- trend calculations
-- Deal assessment
+- separate Sell Listings analysis
+- separate Buy Orders analysis
+- direction percentages
+- recent-average comparisons
+- price-position analysis
+- buyer-facing signals
+- seller-facing signals
+- confidence display
+- selected-window coverage display
+- sample-count display
 - spread display
-- opportunity signal
+- local-history disclaimer
 - sell/buy history sparklines
 - historical min/avg/max values
 
@@ -392,7 +676,7 @@ Current Visual Studio project: `Copper & Claw`
 Current DLL: `Copper & Claw.dll`  
 User-facing addon display name: `Copper&Claw`
 
-Possible future cleanup: rename the build target to `CopperAndClaw.dll` while retaining `Copper&Claw` as the visible addon name.
+Decision: keep the current DLL/project naming.
 
 ### Target alert appearance
 
@@ -402,27 +686,52 @@ The current dark card background may receive additional cosmetic polish later.
 
 ### Item-index cache format
 
-The Trading Post item-index cache now includes variant labels.
+The Trading Post item-index cache includes variant labels.
 
 Older cache files without variant metadata remain readable, but they trigger a rebuild so the cache can be upgraded to the current format.
 
+### Local history limitation
+
+Copper&Claw builds its own local price-history database.
+
+No historical market data exists for periods before an item began being tracked locally.
+
+New installations therefore begin with no historical market data.
+
+### Market-analysis confidence
+
+Current confidence uses locally available history span, selected trend window, observation count, and coverage thresholds.
+
+Further refinement may be considered later if testing shows that long offline gaps cause coverage to appear more complete than the actual observation density.
+
 ### Nexus signature
 
-The current addon signature is provisional and must be replaced/registered before public release.
+Current standalone signature:
+
+`(uint32_t)-26090301`
+
+Decision: retain for standalone/non-Raidcore use.
+
+Replace only if Copper&Claw later receives an assigned Raidcore signature.
 
 ---
 
 ## Pre-Release Checklist
 
 - decide whether Aurene's Bite remains permanently watched
-- decide final DLL/build-target naming
-- replace/register the provisional Nexus addon signature
-- perform a clean Release x64 rebuild
+- perform clean Release x64 rebuild
 - verify final DLL loads through Nexus
 - verify watch persistence
+- verify Sell Target persistence
+- verify Trend Window persistence
 - verify cached item index
 - verify variant-aware duplicate-name search after restart
 - verify history continuity
+- verify observation counts survive restart
+- verify Sell Listings analysis
+- verify Buy Orders analysis
+- verify confidence / coverage display
+- verify local-history disclaimer
 - verify target alert
 - verify queued alerts
 - update `README.md`
