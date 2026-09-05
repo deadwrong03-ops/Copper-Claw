@@ -1595,41 +1595,256 @@ void TradingPostUI::RenderTab(
             uint64_t seconds
             )
         {
-            if (seconds >= 24ULL * 60ULL * 60ULL)
+            constexpr uint64_t secondsPerMinute =
+                60ULL;
+
+            constexpr uint64_t secondsPerHour =
+                60ULL * secondsPerMinute;
+
+            constexpr uint64_t secondsPerDay =
+                24ULL * secondsPerHour;
+
+            if (seconds >= secondsPerDay)
             {
                 const uint64_t days =
                     seconds /
-                    (24ULL * 60ULL * 60ULL);
+                    secondsPerDay;
 
-                return
+                const uint64_t hours =
+                    (
+                        seconds %
+                        secondsPerDay
+                        ) /
+                    secondsPerHour;
+
+                std::string value =
                     std::to_string(
                         days
                     ) +
                     "d";
+
+                if (hours > 0)
+                {
+                    value +=
+                        " " +
+                        std::to_string(
+                            hours
+                        ) +
+                        "h";
+                }
+
+                return value;
             }
 
-            if (seconds >= 60ULL * 60ULL)
+            if (seconds >= secondsPerHour)
             {
                 const uint64_t hours =
                     seconds /
-                    (60ULL * 60ULL);
+                    secondsPerHour;
 
-                return
+                const uint64_t minutes =
+                    (
+                        seconds %
+                        secondsPerHour
+                        ) /
+                    secondsPerMinute;
+
+                std::string value =
                     std::to_string(
                         hours
                     ) +
                     "h";
+
+                if (minutes > 0)
+                {
+                    value +=
+                        " " +
+                        std::to_string(
+                            minutes
+                        ) +
+                        "m";
+                }
+
+                return value;
             }
 
             const uint64_t minutes =
                 seconds /
-                60ULL;
+                secondsPerMinute;
 
             return
                 std::to_string(
                     minutes
                 ) +
                 "m";
+        };
+
+    struct WindowCoverageInfo
+    {
+        uint64_t coveredSeconds = 0;
+        double coverage = 0.0;
+        size_t sampleCount = 0;
+    };
+
+    auto CalculateGapAwareCoverage =
+        [](
+            const std::vector<
+            TradingPostHistoryPoint
+            >& points,
+            uint64_t windowSeconds
+            )
+        {
+            WindowCoverageInfo result;
+
+            if (
+                points.size() < 2 ||
+                windowSeconds == 0
+                )
+            {
+                return result;
+            }
+
+            const uint64_t newestTimestamp =
+                points.back().
+                timestampUnixSeconds;
+
+            if (newestTimestamp < windowSeconds)
+            {
+                return result;
+            }
+
+            const uint64_t startTimestamp =
+                newestTimestamp -
+                windowSeconds;
+
+            //
+            // Count samples actually inside the selected analysis window.
+            // The older trend-boundary anchor is intentionally excluded.
+            //
+            for (
+                const TradingPostHistoryPoint& point :
+                points
+                )
+            {
+                if (
+                    point.timestampUnixSeconds >=
+                    startTimestamp &&
+                    point.timestampUnixSeconds <=
+                    newestTimestamp
+                    )
+                {
+                    ++result.sampleCount;
+                }
+            }
+
+            //
+            // Estimate actual observed continuity instead of assuming that
+            // oldest-to-newest span means continuous coverage.
+            //
+            // Older history is intentionally compacted, so tolerated gaps
+            // scale with the retention tier:
+            //
+            // newest 24h:      live cadence, tolerate up to 3 minutes
+            // 24h through 7d:  5-minute retention, tolerate up to 15 minutes
+            // older than 7d:   30-minute retention, tolerate up to 90 minutes
+            //
+            // Anything larger is treated as an offline/unobserved gap and
+            // contributes only the tolerated portion.
+            //
+            uint64_t coveredSeconds = 0;
+
+            for (
+                size_t i = 1;
+                i < points.size();
+                ++i
+                )
+            {
+                const TradingPostHistoryPoint& previous =
+                    points[i - 1];
+
+                const TradingPostHistoryPoint& current =
+                    points[i];
+
+                if (
+                    current.timestampUnixSeconds <=
+                    previous.timestampUnixSeconds ||
+                    current.timestampUnixSeconds <=
+                    startTimestamp ||
+                    previous.timestampUnixSeconds >=
+                    newestTimestamp
+                    )
+                {
+                    continue;
+                }
+
+                const uint64_t segmentStart =
+                    std::max(
+                        previous.timestampUnixSeconds,
+                        startTimestamp
+                    );
+
+                const uint64_t segmentEnd =
+                    std::min(
+                        current.timestampUnixSeconds,
+                        newestTimestamp
+                    );
+
+                if (segmentEnd <= segmentStart)
+                {
+                    continue;
+                }
+
+                const uint64_t segmentSeconds =
+                    segmentEnd -
+                    segmentStart;
+
+                const uint64_t ageAtSegmentEnd =
+                    newestTimestamp >= segmentEnd
+                    ? newestTimestamp - segmentEnd
+                    : 0;
+
+                uint64_t toleratedGapSeconds =
+                    3ULL * 60ULL;
+
+                if (
+                    ageAtSegmentEnd >
+                    7ULL * 24ULL * 60ULL * 60ULL
+                    )
+                {
+                    toleratedGapSeconds =
+                        90ULL * 60ULL;
+                }
+                else if (
+                    ageAtSegmentEnd >
+                    24ULL * 60ULL * 60ULL
+                    )
+                {
+                    toleratedGapSeconds =
+                        15ULL * 60ULL;
+                }
+
+                coveredSeconds +=
+                    std::min(
+                        segmentSeconds,
+                        toleratedGapSeconds
+                    );
+            }
+
+            result.coveredSeconds =
+                std::min(
+                    coveredSeconds,
+                    windowSeconds
+                );
+
+            result.coverage =
+                static_cast<double>(
+                    result.coveredSeconds
+                    ) /
+                static_cast<double>(
+                    windowSeconds
+                    );
+
+            return result;
         };
 
     auto CalculateWindowAverageSell =
@@ -2768,21 +2983,18 @@ void TradingPostUI::RenderTab(
         const size_t minimumAnalysisSamples =
             15;
 
+        const WindowCoverageInfo windowCoverage =
+            CalculateGapAwareCoverage(
+                history,
+                trendWindowSeconds
+            );
+
         const double selectedWindowCoverage =
-            trendWindowSeconds > 0
-            ? std::min(
-                1.0,
-                static_cast<double>(
-                    historySpanSeconds
-                    ) /
-                static_cast<double>(
-                    trendWindowSeconds
-                    )
-            )
-            : 0.0;
+            windowCoverage.coverage;
 
         const bool marketAnalysisReady =
-            history.size() >= minimumAnalysisSamples &&
+            windowCoverage.sampleCount >=
+            minimumAnalysisSamples &&
             selectedWindowCoverage >= 0.75 &&
             sellTrend.available &&
             buyTrend.available;
@@ -2811,7 +3023,7 @@ void TradingPostUI::RenderTab(
         {
             const std::string spanText =
                 FormatHistorySpan(
-                    historySpanSeconds
+                    windowCoverage.coveredSeconds
                 );
 
             const std::string windowText =
@@ -2874,9 +3086,8 @@ void TradingPostUI::RenderTab(
             }
 
             const char* confidenceLabel =
-                selectedWindowCoverage >= 0.90 &&
-                sellTrend.available &&
-                buyTrend.available
+                marketAnalysisReady &&
+                selectedWindowCoverage >= 0.90
                 ? "HIGH"
                 : (
                     marketAnalysisReady
@@ -2975,7 +3186,7 @@ void TradingPostUI::RenderTab(
 
                 const std::string spanText =
                     FormatHistorySpan(
-                        historySpanSeconds
+                        windowCoverage.coveredSeconds
                     );
 
                 const std::string windowText =
@@ -3551,9 +3762,8 @@ void TradingPostUI::RenderTab(
                 ImGui::Spacing();
 
                 const char* confidenceLabel =
-                    selectedWindowCoverage >= 0.90 &&
-                    sellTrend.available &&
-                    buyTrend.available
+                    marketAnalysisReady &&
+                    selectedWindowCoverage >= 0.90
                     ? "HIGH"
                     : (
                         marketAnalysisReady
@@ -3599,6 +3809,13 @@ void TradingPostUI::RenderTab(
                     coveragePercent
                 );
 
+                if (ImGui::IsItemHovered())
+                {
+                    ImGui::SetTooltip(
+                        "Gap-aware coverage. Long periods without observations are discounted; normal history compaction is accounted for."
+                    );
+                }
+
                 ImGui::TextDisabled(
                     "Samples"
                 );
@@ -3612,9 +3829,16 @@ void TradingPostUI::RenderTab(
                     static_cast<
                     unsigned long long
                     >(
-                        history.size()
+                        windowCoverage.sampleCount
                         )
                 );
+
+                if (ImGui::IsItemHovered())
+                {
+                    ImGui::SetTooltip(
+                        "Observations inside the selected trend window."
+                    );
+                }
 
                 if (
                     price.buyUnitPrice > 0 &&

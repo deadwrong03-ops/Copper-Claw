@@ -34,6 +34,7 @@ Core Trading Post functionality has been separated into its own addon, tested su
 - Persistent watched-item list
 - Persistent target prices
 - Persistent local Trading Post price history
+- Preserve-all historical observation policy
 - Cached searchable Trading Post item index
 - Item search without requiring manual item IDs
 - Variant-aware search for duplicate-name Trading Post items
@@ -89,13 +90,11 @@ This is important when interpreting longer trend windows such as 7d, 30d, or 90d
 
 ## Price History Retention
 
-Copper&Claw keeps local Trading Post observations and compacts older data over time.
+Copper&Claw preserves every successfully recorded Trading Post observation.
 
-- Newest 24 hours: every recorded observation
-- 24 hours to 7 days: approximately one observation every 5 minutes
-- Older than 7 days: approximately one observation every 30 minutes
+Historical observations are no longer automatically compacted, downsampled, or discarded as they age.
 
-This allows recent market movement to retain higher detail while keeping long-term history storage manageable.
+This means the local Trading Post history file can grow over time, but collected market data is preserved instead of silently losing detail.
 
 ## Market Analysis
 
@@ -175,11 +174,12 @@ Copper&Claw avoids presenting newly collected data as mature historical analysis
 
 Analysis considers:
 
-- available observation count
+- observation count inside the selected trend window
 - amount of locally collected history
 - selected trend window
 - whether sufficient history exists for the requested comparison
-- percentage of the selected window currently covered
+- gap-aware coverage of the selected window
+- long offline periods without observations
 
 Current confidence levels include:
 
@@ -189,9 +189,13 @@ Current confidence levels include:
 
 The UI also displays:
 
-- coverage
-- sample count
+- gap-aware coverage
+- sample count for the selected trend window
 - selected history window
+
+Coverage discounts long periods where Copper&Claw was not actually observing the market while still accounting for historical retention behavior from older builds.
+
+Coverage duration is shown with additional precision where useful, such as `1d 7h` instead of only `1d`.
 
 This helps distinguish a mature analysis from one that is still developing.
 
@@ -314,7 +318,9 @@ The following have been tested successfully in-game:
 - recent-average comparisons
 - price-position analysis
 - buyer and seller market signals
-- confidence and coverage display
+- confidence and gap-aware coverage display
+- selected-window sample-count display
+- preserve-all historical observation behavior
 - local-history disclaimer
 - item search/index operation
 - duplicate-name Trading Post item detection
@@ -329,7 +335,9 @@ The following have been tested successfully in-game:
 
 ## Known Pre-Release Notes
 
-- Aurene's Bite is currently treated as the built-in default watched item and cannot be removed.
+- Aurene's Bite is added only as a first-run starter watched item and can be removed normally.
+- Removed starter items stay removed after restart.
+- Copper&Claw preserves all newly recorded historical observations instead of automatically compacting older data.
 - The current Visual Studio project produces `Copper & Claw.dll`.
 - The Nexus addon display name is `Copper&Claw`.
 - Copper&Claw currently uses a unique negative Nexus addon signature for standalone/non-Raidcore use.
@@ -388,7 +396,7 @@ Current development priorities emphasize:
 - accurate interpretation of locally collected price data
 - clear separation between Sell Listings and Buy Orders
 - cautious analysis when historical coverage is limited
-- persistent local price history
+- persistent local price history without destructive automatic compaction
 - practical Trading Post alerts and watch-list functionality
 - clean in-game usability
 

@@ -665,6 +665,7 @@ The following systems are currently working in-game:
 - searchable stat variants
 - variant labels retained when adding watched items
 - local Trading Post history
+- preserve-all historical observation behavior
 - history continuity across game restarts
 - observation counts retained across game restarts
 - current lowest sell price
@@ -685,8 +686,8 @@ The following systems are currently working in-game:
 - buyer-facing signals
 - seller-facing signals
 - confidence display
-- selected-window coverage display
-- sample-count display
+- gap-aware selected-window coverage display
+- selected-window sample-count display
 - spread display
 - local-history disclaimer
 - sell/buy history sparklines
@@ -698,20 +699,155 @@ No public Copper&Claw release has been published yet.
 
 ---
 
+
+## 2026-09-05 — Aurene's Bite Changed to First-Run Starter
+
+Removed the permanent-default behavior for Aurene's Bite.
+
+New behavior:
+
+- Aurene's Bite is seeded only when the watch settings file does not yet exist
+- it is no longer marked as a permanent default item
+- it can be removed normally
+- removing it unregisters it from new history recording while preserving existing history
+- after removal, restarting Guild Wars 2 does not automatically add it back
+- it can be added again normally through Copper&Claw item search
+
+In-game test:
+
+- removed Aurene's Bite
+- restarted/relogged
+- verified it stayed removed
+- added it back successfully
+
+**Result: PASS**
+
+---
+
+## 2026-09-05 — Gap-Aware Confidence / Coverage
+
+The earlier confidence system could overstate coverage because it mainly compared total historical span against the selected trend window.
+
+Example problem:
+
+A history file could contain observations separated by long offline gaps but still appear to cover most or all of a 7-day window.
+
+Added gap-aware coverage calculation.
+
+Current behavior:
+
+- counts samples inside the selected trend window
+- measures observed continuity instead of only oldest-to-newest span
+- discounts long periods with no observations
+- accounts for the historical sampling tiers used by older Copper&Claw builds
+- requires selected-window samples and coverage thresholds for analysis readiness
+- HIGH confidence requires full readiness plus at least 90% gap-aware coverage
+
+Coverage display formatting was also improved so partial-day and partial-hour values can be shown more clearly.
+
+Example:
+
+`1d 7h of 7d (19%)`
+
+In-game Aurene's Bite test showed:
+
+- `Conf LOW`
+- approximately `1d 7h of 7d (19%)`
+- selected-window sample count remained available
+- Sell / Buy direction calculations continued working
+- buyer / seller guidance correctly remained `Developing`
+
+**Result: PASS**
+
+---
+
+## 2026-09-05 — Preserve-All Historical Data Policy
+
+Review of `TradingPostHistoryManager.cpp` confirmed that older Copper&Claw builds destructively compacted historical observations:
+
+- newest 24 hours: every observation
+- 24 hours to 7 days: one representative observation per 5-minute bucket
+- older than 7 days: one representative observation per 30-minute bucket
+
+Compaction could occur:
+
+- immediately on startup
+- again periodically while recording observations
+
+This caused retained observation counts to decrease as data aged.
+
+Decision:
+
+Copper&Claw should not silently discard market observations that the user has already collected.
+
+Automatic destructive history compaction was disabled.
+
+Current behavior:
+
+- every successful Trading Post observation is appended normally
+- startup no longer compacts/re-writes history
+- ongoing observation recording no longer triggers destructive compaction
+- existing history files are left intact
+- new observations are preserved indefinitely unless the user manually removes or edits the data file
+
+A compile issue from the first preserve-all edit was corrected by retaining the legacy compaction constant/helper code while disabling the actual invocation points.
+
+**Result: BUILD PASS**
+
+---
+
+## 2026-09-05 — Historical Data Recovery Validation
+
+Previously compacted local history was reconstructed by merging:
+
+- the fuller pre-compaction backup
+- the current live Copper&Claw history file
+
+Only exact duplicate rows were removed.
+
+Recovery results:
+
+- current live file before merge: 688 observations
+- fuller backup: 1,181 observations
+- exact overlap: 551 observations
+- restored combined history: 1,318 unique observations
+- recovered from backup: 630 observations
+
+Aurene's Bite:
+
+- live before merge: 410 observations
+- backup: 656 observations
+- restored combined history: 701 observations
+- recovered Aurene's Bite observations: 291
+
+After launching Copper&Claw with the restored file:
+
+- Aurene's Bite displayed 702 observations after one fresh observation was recorded
+- other watched-item counts also increased appropriately
+- historical charts rendered normally
+- gap-aware confidence remained active
+- new observations continued appending
+
+**Result: PASS**
+
+---
+
 ## Current Known Notes / Decisions Still Open
 
-### Aurene's Bite default item
+### Aurene's Bite starter item
 
-Aurene's Bite is currently hard-coded as the default watched item.
+Aurene's Bite is now used only as a first-run starter watched item.
 
 Item ID: `96356`
 
-Because it is marked as the default item, the UI does not offer a Remove button for it.
+Behavior:
 
-Decision still open:
+- added automatically only when no Copper&Claw watch settings file exists
+- fully removable like any other watched item
+- stays removed after restart
+- can be added back normally through item search
 
-- keep Aurene's Bite as the permanent default
-- or make all watched items fully removable
+**Decision: RESOLVED**
 
 ### DLL / project naming
 
@@ -741,11 +877,17 @@ No historical market data exists for periods before an item began being tracked 
 
 New installations therefore begin with no historical market data.
 
+Copper&Claw now preserves every successfully recorded observation and does not automatically compact or downsample older history.
+
 ### Market-analysis confidence
 
-Current confidence uses locally available history span, selected trend window, observation count, and coverage thresholds.
+Confidence now uses gap-aware selected-window coverage instead of relying only on oldest-to-newest history span.
 
-Further refinement may be considered later if testing shows that long offline gaps cause coverage to appear more complete than the actual observation density.
+Long offline periods without observations are discounted so they cannot make coverage appear more complete than the actual observation density.
+
+Selected-window sample count is also used for readiness.
+
+**Decision: RESOLVED**
 
 ### Nexus signature
 
@@ -761,7 +903,7 @@ Replace only if Copper&Claw later receives an assigned Raidcore signature.
 
 ## Pre-Release Checklist
 
-- [ ] decide whether Aurene's Bite remains permanently watched
+- [x] make Aurene's Bite a removable first-run starter item
 - [x] perform clean Release x64 rebuild
 - [x] verify final DLL loads through Nexus
 - [x] verify watch persistence
@@ -770,10 +912,12 @@ Replace only if Copper&Claw later receives an assigned Raidcore signature.
 - [x] verify cached item index
 - [x] verify variant-aware duplicate-name search after restart
 - [x] verify history continuity
+- [x] verify preserve-all history behavior
+- [x] verify restored history continues appending
 - [x] verify observation counts survive restart
 - [x] verify Sell Listings analysis
 - [x] verify Buy Orders analysis
-- [x] verify confidence / coverage display
+- [x] verify confidence / gap-aware coverage display
 - [x] verify local-history disclaimer
 - [x] verify target alert
 - [x] verify queued alerts

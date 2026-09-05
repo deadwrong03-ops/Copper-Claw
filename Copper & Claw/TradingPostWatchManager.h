@@ -11,6 +11,12 @@ struct TradingPostWatchItem
 
     uint64_t targetSellCopper = 0;
 
+    //
+    // Retained for UI/source compatibility.
+    // Copper&Claw no longer has a permanently protected watched item;
+    // normal loaded/added items, including the first-run Aurene's Bite
+    // starter item, use false.
+    //
     bool isDefault = false;
 };
 

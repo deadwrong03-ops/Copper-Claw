@@ -116,55 +116,27 @@ namespace
                 L"CopperAndClaw_TradingPostWatch.ini";
     }
 
-    void EnsureDefaultItemLocked()
+    void AddFirstRunStarterItemLocked()
     {
-        const auto it =
-            std::find_if(
-                g_WatchedItems.begin(),
-                g_WatchedItems.end(),
-                [](
-                    const TradingPostWatchItem&
-                    item
-                    )
-                {
-                    return
-                        item.itemID ==
-                        AURENES_BITE_ITEM_ID;
-                }
-            );
+        TradingPostWatchItem item;
 
-        if (
-            it ==
-            g_WatchedItems.end()
-            )
-        {
-            TradingPostWatchItem item;
+        item.itemID =
+            AURENES_BITE_ITEM_ID;
 
-            item.itemID =
-                AURENES_BITE_ITEM_ID;
+        item.name =
+            "Aurene's Bite";
 
-            item.name =
-                "Aurene's Bite";
+        //
+        // Aurene's Bite is only a first-run starter/example item.
+        // It is not permanent and behaves exactly like any other
+        // watched item after it has been created.
+        //
+        item.isDefault =
+            false;
 
-            item.isDefault =
-                true;
-
-            g_WatchedItems.insert(
-                g_WatchedItems.begin(),
-                item
-            );
-        }
-        else
-        {
-            it->isDefault =
-                true;
-
-            if (it->name.empty())
-            {
-                it->name =
-                    "Aurene's Bite";
-            }
-        }
+        g_WatchedItems.push_back(
+            item
+        );
 
         g_TargetAlertStates[
             AURENES_BITE_ITEM_ID
@@ -345,7 +317,13 @@ namespace
         g_WatchedItems.clear();
         g_TargetAlertStates.clear();
 
-        if (!g_SettingsPath.empty())
+        const bool settingsFileExists =
+            !g_SettingsPath.empty() &&
+            std::filesystem::exists(
+                g_SettingsPath
+            );
+
+        if (settingsFileExists)
         {
             std::ifstream file(
                 g_SettingsPath
@@ -509,6 +487,14 @@ namespace
                             secondSeparator + 1
                         );
 
+                    //
+                    // No watched item is permanently protected anymore.
+                    // Existing saved Aurene's Bite entries therefore become
+                    // removable automatically on the next load.
+                    //
+                    item.isDefault =
+                        false;
+
                     if (item.itemID != 0)
                     {
                         g_WatchedItems.push_back(
@@ -526,8 +512,21 @@ namespace
                 }
             }
         }
+        else
+        {
+            //
+            // Genuine first run only: seed one useful example so the
+            // addon immediately demonstrates live pricing/history.
+            //
+            AddFirstRunStarterItemLocked();
 
-        EnsureDefaultItemLocked();
+            //
+            // Persist the starter immediately. If the user later removes it,
+            // the existing settings file proves initialization already
+            // happened, so it will not be recreated on future restarts.
+            //
+            SaveLocked();
+        }
     }
 
     void QueueAllLocked(
@@ -901,14 +900,6 @@ void TradingPostWatchManager::RemoveItem(
     std::lock_guard<std::mutex> lock(
         g_WatchMutex
     );
-
-    if (
-        itemID ==
-        AURENES_BITE_ITEM_ID
-        )
-    {
-        return;
-    }
 
     g_WatchedItems.erase(
         std::remove_if(

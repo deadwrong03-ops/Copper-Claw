@@ -36,9 +36,8 @@ namespace
         30 * SECONDS_PER_MINUTE;
 
     //
-    // Do not rewrite the TSV after every observation.
-    // Once per hour is frequent enough to keep the file bounded
-    // while avoiding unnecessary disk churn.
+    // Legacy compaction interval retained because the old helper functions
+    // remain in this source file. Automatic compaction is no longer invoked.
     //
     constexpr uint64_t COMPACTION_INTERVAL_SECONDS =
         1 * SECONDS_PER_HOUR;
@@ -779,28 +778,11 @@ void TradingPostHistoryManager::Start(
 
     g_Started = true;
 
-    const uint64_t nowUnixSeconds =
-        GetCurrentUnixSeconds();
-
     //
-    // Normalize/compact old history immediately on startup.
+    // Preserve all historical observations exactly as stored.
+    // Copper&Claw no longer performs destructive startup compaction.
     //
-    CompactHistoryLocked(
-        nowUnixSeconds,
-        true
-    );
-
-    //
-    // Even if the rewrite failed, do not hammer the disk repeatedly
-    // during this same startup session.
-    //
-    if (
-        g_LastCompactionUnixSeconds == 0
-        )
-    {
-        g_LastCompactionUnixSeconds =
-            nowUnixSeconds;
-    }
+    g_LastCompactionUnixSeconds = 0;
 }
 
 void TradingPostHistoryManager::Shutdown()
@@ -952,12 +934,9 @@ RecordObservation(
     );
 
     //
-    // The newest 24 hours stay at full detail. Once per hour,
-    // compact older data into the longer-term sampling tiers.
+    // Preserve every successful observation.
+    // Automatic destructive history compaction is disabled.
     //
-    MaybeCompactHistoryLocked(
-        timestampUnixSeconds
-    );
 }
 
 std::vector<
