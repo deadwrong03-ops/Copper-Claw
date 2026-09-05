@@ -1,4 +1,13 @@
 ﻿# Copper&Claw
+ <img width="75" height="75" alt="C C" src="https://github.com/user-attachments/assets/b3933349-6ae7-4969-bb29-fbdc0c351503"/>
+<img width="75" height="75" alt="SELLBUYstats" src="https://github.com/user-attachments/assets/486adbda-3460-4ca9-a713-00dfa3567230" />
+<img width="75" height="75" alt="Targethitboxlarge" src="https://github.com/user-attachments/assets/38b269cf-c077-450d-a564-d85a5d150cde" />
+<img width="75" height="75" alt="targethitsmall" src="https://github.com/user-attachments/assets/5d5507b5-8693-45ed-b70a-63b8a88bd496" />
+<img width="75" height="75" alt="markettrends new" src="https://github.com/user-attachments/assets/04835a47-f646-40a9-b5c7-f8c7cd88619c" />
+
+<img width="75" height="75" alt="indexbuilding" src="https://github.com/user-attachments/assets/67b35d13-09af-4deb-9500-878b52da72b0" />
+
+
 
 Copper&Claw is a standalone Guild Wars 2 Nexus addon for watching Trading Post prices, building local price history, analyzing market movement, and alerting when watched items reach a user-defined sell target.
 
