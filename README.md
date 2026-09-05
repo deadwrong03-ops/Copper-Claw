@@ -1,5 +1,5 @@
 ﻿# Copper&Claw
- <img width="75" height="75" alt="C C" src="https://github.com/user-attachments/assets/b3933349-6ae7-4969-bb29-fbdc0c351503"/>
+<img width="75" height="75" alt="logo" src="https://github.com/user-attachments/assets/42abe8a1-7768-448f-a85a-d2bab4e7b667" />
 <img width="75" height="75" alt="SELLBUYstats" src="https://github.com/user-attachments/assets/486adbda-3460-4ca9-a713-00dfa3567230" />
 <img width="75" height="75" alt="Targethitboxlarge" src="https://github.com/user-attachments/assets/38b269cf-c077-450d-a564-d85a5d150cde" />
 <img width="75" height="75" alt="targethitsmall" src="https://github.com/user-attachments/assets/5d5507b5-8693-45ed-b70a-63b8a88bd496" />
